@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import {
+  useLocation,
+  useParams,
+  Switch,
+  Route,
+  Link,
+  useRouteMatch,
+} from "react-router-dom";
+import { Helmet } from "react-helmet";
+import { useQuery } from "@tanstack/react-query";
 import styled from "styled-components";
+import Chart from "./Chart";
+import Price from "./Price";
+import { fetchCoinInfoData, fetchCoinPriceData } from "../api";
 
 const Title = styled.h1`
   color: ${(props) => props.theme.accentColor};
@@ -20,8 +32,64 @@ const Header = styled.header`
   align-items: center;
 `;
 
+const Overview = styled.div`
+  display: flex;
+  justify-content: space-between;
+  background-color: rgba(0, 0, 0, 0.5);
+  margin-top: 10px;
+  padding: 10px 20px;
+  border-radius: 10px;
+`;
+
+const OverviewItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  span:first-child {
+    font-size: 10px;
+    font-weight: 400;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+`;
+const Description = styled.p`
+  margin: 20px 0px;
+`;
+
 const Loader = styled.div`
   text-align: center;
+`;
+
+const GoHome = styled.div`
+  display: block;
+  background-color: black;
+  border-radius: 50px;
+  height: 50px;
+  width: 50px;
+  color: white;
+`;
+
+const Tabs = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  margin: 25px 0;
+  gap: 10px;
+`;
+
+const Tab = styled.span<{ isActive: boolean }>`
+  text-align: center;
+  font-size: 12px;
+  font-weight: 400;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 7px 0;
+  color: ${(props) =>
+    props.isActive ? props.theme.accentColor : props.theme.textColor};
+  border-radius: 10px;
+  a {
+    display: block;
+  }
+  text-transform: uppercase;
 `;
 
 interface RouteParams {
@@ -88,32 +156,105 @@ interface PriceData {
 }
 
 function Coin() {
-  const [loading, setLoading] = useState(true);
   const { coinId } = useParams<RouteParams>();
   const { state } = useLocation<RouteState>();
-  const [info, setInfo] = useState<InfoData>();
-  const [priceInfo, setPriceInfo] = useState<PriceData>();
-  useEffect(() => {
-    (async () => {
-      const infoData = await (
-        await fetch(`https://api.coinpaprika.com/v1/coins/${coinId}`)
-      ).json();
-      console.log(infoData);
-      setInfo(infoData);
-      const priceData = await (
-        await fetch(`https://api.coinpaprika.com/v1/tickers/${coinId}`)
-      ).json();
-      console.log(priceData);
-      setPriceInfo(priceData);
-    })();
-  }, []);
+  const PriceMatch = useRouteMatch("/:coinId/price");
+  const ChartMatch = useRouteMatch("/:coinId/chart");
+  // const [loading, setLoading] = useState(true);
+  // const [info, setInfo] = useState<InfoData>();
+  // const [priceInfo, setPriceInfo] = useState<PriceData>();
+  // useEffect(() => {
+  //   (async () => {
+  //     const infoData = await (
+  //       await fetch(`https://api.coinpaprika.com/v1/coins/${coinId}`)
+  //     ).json();
+  //     console.log(infoData);
+  //     setInfo(infoData);
+  //     const priceData = await (
+  //       await fetch(`https://api.coinpaprika.com/v1/tickers/${coinId}`)
+  //     ).json();
+  //     console.log(priceData);
+  //     setPriceInfo(priceData);
+  //     setLoading(false);
+  //   })();
+  // }, [coinId]);
 
+  const { isLoading: infoLoading, data: infoData } = useQuery<InfoData>(
+    ["info", coinId],
+    () => fetchCoinInfoData(coinId)
+  );
+  const { isLoading: tickersLoading, data: tickersData } = useQuery<PriceData>(
+    ["tickers", coinId],
+    () => fetchCoinPriceData(coinId),
+    { refetchInterval: 5000 }
+  );
+  const loading = infoLoading || tickersLoading;
   return (
     <Container>
+      <Helmet>
+        <title>
+          {state?.name ? state.name : loading ? "loading" : infoData?.name}
+        </title>
+      </Helmet>
       <Header>
-        <Title>{state?.name || "loading"}</Title>
+        <Title>
+          {state?.name ? state.name : loading ? "loading" : infoData?.name}
+        </Title>
       </Header>
       {loading ? <Loader>LOLOLOLading</Loader> : null}
+
+      <GoHome>
+        <Link to="/">home</Link>
+      </GoHome>
+
+      <>
+        <Overview>
+          <OverviewItem>
+            <span>Rank:</span>
+            <span>{infoData?.rank}</span>
+          </OverviewItem>
+          <OverviewItem>
+            <span>Symbol:</span>
+            <span>{infoData?.symbol}</span>
+          </OverviewItem>
+          <OverviewItem>
+            <span>Open Sourse:</span>
+            <span>{infoData?.open_source ? "Yes" : "No"}</span>
+          </OverviewItem>
+          <OverviewItem>
+            <span>Price:</span>
+            <span>${tickersData?.quotes.USD.price.toFixed(2)}</span>
+          </OverviewItem>
+        </Overview>
+        <Description>${infoData?.description}</Description>
+        <Overview>
+          <OverviewItem>
+            <span>Total Supply:</span>
+            <span>${tickersData?.total_supply}</span>
+          </OverviewItem>
+          <OverviewItem>
+            <span>Max Supply:</span>
+            <span>${tickersData?.max_supply}</span>
+          </OverviewItem>
+        </Overview>
+      </>
+      <Tabs>
+        <Tab isActive={PriceMatch !== null}>
+          <Link to={`/${coinId}/price`}>Price</Link>
+        </Tab>
+        <Tab isActive={ChartMatch !== null}>
+          <Link to={`/${coinId}/chart`}>Chart</Link>
+        </Tab>
+      </Tabs>
+
+      <Switch>
+        <Route path={`/${coinId}/price`}>
+          <Price />
+        </Route>
+        <Route path={`/${coinId}/chart`}>
+          <Chart coinId={coinId} />
+        </Route>
+      </Switch>
     </Container>
   );
 }
