@@ -8,6 +8,7 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { RecoilRoot } from "recoil";
+import { lightTheme } from "./theme";
 const queryClient = new QueryClient();
 
 const root = ReactDOM.createRoot(
@@ -15,9 +16,9 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <RecoilRoot>
-    <QueryClientProvider client={queryClient}>
+    <ThemeProvider theme={lightTheme}>
       <App />
-    </QueryClientProvider>
+    </ThemeProvider>
   </RecoilRoot>
   //     <React.StrictMode>
   // </React.StrictMode>
