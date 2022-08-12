@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/react-practice-ts-coinTracker/static/js/main.4ca49f3d.js",
+    "main.js": "/react-practice-ts-coinTracker/static/js/main.ba4a4673.js",
     "index.html": "/react-practice-ts-coinTracker/index.html",
-    "main.4ca49f3d.js.map": "/react-practice-ts-coinTracker/static/js/main.4ca49f3d.js.map"
+    "main.ba4a4673.js.map": "/react-practice-ts-coinTracker/static/js/main.ba4a4673.js.map"
   },
   "entrypoints": [
-    "static/js/main.4ca49f3d.js"
+    "static/js/main.ba4a4673.js"
   ]
 }
